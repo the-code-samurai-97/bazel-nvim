@@ -18,6 +18,9 @@ end
 function M.run()
   return M.action("run")
 end
+function M.build_package()
+  return require("bazel-nvim.tools").build_package()
+end
 function M.yank_label()
   return require("bazel-nvim.tools").yank_label()
 end
@@ -57,6 +60,7 @@ end
 -- key-config name -> { handler, description }
 local BUILD_ACTIONS = {
   build = { M.build, "Bazel: build target under cursor" },
+  build_package = { M.build_package, "Bazel: build whole package (//pkg:all)" },
   test = { M.test, "Bazel: test target under cursor" },
   run = { M.run, "Bazel: run target under cursor" },
   yank = { M.yank_label, "Bazel: yank //pkg:target label" },

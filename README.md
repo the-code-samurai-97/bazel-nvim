@@ -12,6 +12,11 @@ It parses `BUILD` / `BUILD.bazel` / `*.bzl` files with the (Starlark-compatible)
 - **Build / test / run the target under the cursor** — surgical
   `bazel build|test|run //pkg:target` instead of building the whole package.
   Build/test errors go to the quickfix list; `run` opens a terminal.
+- **Build the whole package** — `bazel build //pkg:all` (or `//...` at the root)
+  for the current file's package.
+- **Label completion** — a [blink.cmp](https://github.com/saghen/blink.cmp) source
+  that completes Bazel labels in `BUILD`/`*.bzl`: package paths, `:targets`
+  (`bazel query`), and source files.
 - **Workspace target picker** — `bazel query //...` piped into a
   [snacks.nvim](https://github.com/folke/snacks.nvim) picker; jump to any target's
   rule in the right `BUILD` file.
@@ -20,6 +25,10 @@ It parses `BUILD` / `BUILD.bazel` / `*.bzl` files with the (Starlark-compatible)
   owns it; from a target open its `srcs`/`hdrs`.
 - **Reverse-deps picker** — `bazel query "rdeps(//..., //pkg:target)"` to see who
   depends on the target under the cursor.
+- **Formatting** — registers [`buildifier`](https://github.com/bazelbuild/buildtools)
+  with [conform.nvim](https://github.com/stevearc/conform.nvim) for Bazel filetypes.
+- **Filetype detection** — `ftdetect` for the Bazel files Neovim core misses
+  (`*.bazel.tpl`, `bzlmod`, `*.bzlproj`, `*.bazelrc`).
 - **Snippets** — LuaSnip snippets for the common rules (`cc_binary`, `cc_library`,
   `py_binary`, `cuda_library`, `genrule`, …) with name → source mirroring.
 
@@ -32,6 +41,10 @@ It parses `BUILD` / `BUILD.bazel` / `*.bzl` files with the (Starlark-compatible)
   rdeps / sources pickers (optional; the rest works without it).
 - **[L3MON4D3/LuaSnip](https://github.com/L3MON4D3/LuaSnip)** — for the bundled
   snippets (optional; set `snippets = false` to skip).
+- **[saghen/blink.cmp](https://github.com/saghen/blink.cmp)** — to register the
+  label-completion source (optional).
+- **[stevearc/conform.nvim](https://github.com/stevearc/conform.nvim)** +
+  `buildifier` — for formatting (optional).
 - Plays nicely with the [`starpls`](https://github.com/withered-magic/starpls)
   language server: its weaker document symbols are suppressed to avoid duplicates.
 
@@ -49,6 +62,36 @@ It parses `BUILD` / `BUILD.bazel` / `*.bzl` files with the (Starlark-compatible)
 ```
 
 `opts = {}` is enough — lazy.nvim auto-calls `require("bazel-nvim").setup(opts)`.
+
+Label completion and formatting register into **blink.cmp** and **conform.nvim**,
+which read their sources/formatters from their own configs — so add these small
+fragments (anywhere in your specs):
+
+```lua
+-- Bazel label completion in BUILD / *.bzl
+{
+  "saghen/blink.cmp",
+  optional = true,
+  opts = {
+    sources = {
+      providers = { bazel = { name = "Bazel", module = "bazel-nvim.blink" } },
+      per_filetype = { bzl = { inherit_defaults = true, "bazel" } },
+    },
+  },
+},
+-- buildifier formatting for Bazel filetypes
+{
+  "stevearc/conform.nvim",
+  optional = true,
+  opts = {
+    formatters_by_ft = {
+      bzl = { "buildifier" },
+      bazel = { "buildifier" },
+      starlark = { "buildifier" },
+    },
+  },
+},
+```
 
 ### Local development
 
@@ -85,13 +128,14 @@ These are the defaults; pass overrides via `opts`.
   -- Buffer-local keymaps in BUILD / *.bzl files (<localleader> = `\` by default).
   -- Set any entry or the whole table to `false` to disable.
   keys = {
-    build   = "<localleader>b",
-    test    = "<localleader>t",
-    run     = "<localleader>r",
-    yank    = "<localleader>y",
-    rdeps   = "<localleader>R",
-    sources = "<localleader>s",
-    targets = "<localleader>f",
+    build         = "<localleader>b",
+    build_package = "<localleader>B",
+    test          = "<localleader>t",
+    run           = "<localleader>r",
+    yank          = "<localleader>y",
+    rdeps         = "<localleader>R",
+    sources       = "<localleader>s",
+    targets       = "<localleader>f",
   },
 
   -- Keymaps in source files (C/C++/CUDA/Python).
@@ -108,6 +152,7 @@ These are the defaults; pass overrides via `opts`.
 | Command         | Description                                            |
 | --------------- | ------------------------------------------------------ |
 | `:BazelBuild`   | Build the target under the cursor                      |
+| `:BazelBuildPackage` | Build the whole package (`//pkg:all`)             |
 | `:BazelTest`    | Test the target under the cursor                       |
 | `:BazelRun`     | Run the target under the cursor (terminal)             |
 | `:BazelLabel`   | Yank the `//pkg:target` label under the cursor         |
@@ -123,6 +168,7 @@ In `BUILD` / `*.bzl` files (`<localleader>` = `\`):
 | Key  | Action                                |
 | ---- | ------------------------------------- |
 | `\b` | Build target under cursor             |
+| `\B` | Build whole package (`//pkg:all`)     |
 | `\t` | Test target under cursor              |
 | `\r` | Run target under cursor               |
 | `\y` | Yank `//pkg:target` label             |
@@ -136,6 +182,22 @@ In `.cc/.cu/.h/.py` files:
 | ---- | --------------------------------- |
 | `\b` | Jump to the target owning the file|
 | `\f` | Workspace target picker           |
+
+## Completion
+
+A blink.cmp source completes Bazel labels inside `BUILD`/`*.bzl` strings (register
+it with the fragment shown in [Installation](#lazynvim)):
+
+- `"//pkg/pa…` → sub-package directories under the workspace
+- `"//pkg:ta…` → rule targets in `//pkg` (via `bazel query`)
+- `":ta…` → rule targets in the current package
+- `"src/fi…` → files/dirs relative to the current package
+
+## Formatting
+
+With the conform fragment, [`buildifier`](https://github.com/bazelbuild/buildtools)
+is registered for `bzl`/`bazel`/`starlark` and runs through your existing conform
+pipeline (e.g. format-on-save). Install `buildifier` on your `PATH`.
 
 ## Snippets
 
@@ -162,6 +224,7 @@ Everything is available on `require("bazel-nvim")` for custom keymaps:
 ```lua
 local bazel = require("bazel-nvim")
 bazel.action("build" | "test" | "run")
+bazel.build_package()
 bazel.yank_label()
 bazel.pick_targets()
 bazel.pick_rdeps()

@@ -35,6 +35,7 @@ local defaults = {
   -- whole table to `false` to disable. Defaults use <localleader> (`\`).
   keys = {
     build = "<localleader>b", -- build the target under the cursor
+    build_package = "<localleader>B", -- build the whole package (//pkg:all)
     test = "<localleader>t", -- test the target under the cursor
     run = "<localleader>r", -- run the target under the cursor (terminal)
     yank = "<localleader>y", -- yank //pkg:target label

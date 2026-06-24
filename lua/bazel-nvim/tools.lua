@@ -156,6 +156,20 @@ function M.action(kind)
   end
 end
 
+--- Build the whole package of the current file (//pkg:all, or //... at the root).
+function M.build_package()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local root = M.root(bufnr)
+  if not root then
+    return notify("No Bazel workspace root (MODULE.bazel / WORKSPACE) found", vim.log.levels.WARN)
+  end
+  local fname = vim.api.nvim_buf_get_name(bufnr)
+  local dir = fname ~= "" and vim.fs.dirname(fname) or root
+  local pkg = package_of(root, dir)
+  local target = pkg == "" and "//..." or ("//" .. pkg .. ":all")
+  run_quickfix({ "build", target }, root, "bazel build " .. target)
+end
+
 --- Copy the label of the target under the cursor to the + and " registers.
 function M.yank_label()
   local info, err = M.cursor_target()
@@ -376,6 +390,7 @@ function M.create_commands()
   local command = vim.api.nvim_create_user_command
   -- stylua: ignore start
   command("BazelBuild",   function() M.action("build") end,    { desc = "Bazel: build target under cursor" })
+  command("BazelBuildPackage", function() M.build_package() end, { desc = "Bazel: build whole package (//pkg:all)" })
   command("BazelTest",    function() M.action("test") end,     { desc = "Bazel: test target under cursor" })
   command("BazelRun",     function() M.action("run") end,      { desc = "Bazel: run target under cursor" })
   command("BazelLabel",   function() M.yank_label() end,       { desc = "Bazel: yank //pkg:target label" })

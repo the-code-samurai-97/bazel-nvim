@@ -1,0 +1,11 @@
+# Neovim / Lua
+*.log
+tags
+doc/tags
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.luarc.json

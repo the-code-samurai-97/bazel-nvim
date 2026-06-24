@@ -28,9 +28,10 @@ It parses `BUILD` / `BUILD.bazel` / `*.bzl` files with the (Starlark-compatible)
 - **Formatting** — registers [`buildifier`](https://github.com/bazelbuild/buildtools)
   with [conform.nvim](https://github.com/stevearc/conform.nvim) for Bazel filetypes.
 - **Filetype detection** — `ftdetect` for the Bazel files Neovim core misses
-  (`*.bazel.tpl`, `bzlmod`, `*.bzlproj`, `*.bazelrc`).
+  (`*.bazel.tpl`, `bzlmod`, `workspace`, `*.bzlproj`, `*.bazelrc`).
 - **Snippets** — LuaSnip snippets for the common rules (`cc_binary`, `cc_library`,
-  `py_binary`, `cuda_library`, `genrule`, …) with name → source mirroring.
+  `py_binary`, `cuda_library`, `genrule`, `http_archive`, `pkg_files`, …) with
+  name → source mirroring.
 
 ## Requirements
 
@@ -211,7 +212,9 @@ Bundled [LuaSnip](https://github.com/L3MON4D3/LuaSnip) snippets for `BUILD` /
 | `cuda_library` `cuda_binary`                                     | CUDA rules (with `load`)       |
 | `py_library` `py_binary` `py_test`                               | Python rules (with `load`)     |
 | `proto_library` `cc_proto_library`                               | Proto rules                    |
+| `http_archive` `git_repository` `module_http`                   | Repository rules (WORKSPACE / MODULE.bazel) |
 | `genrule` `filegroup` `alias` `test_suite` `config_setting`      | Native rules                   |
+| `pkg_files` `cmake_configure`                                   | Packaging & code generation    |
 | `load` `exports_files` `package`                                 | Utilities                      |
 
 The first tabstop (target `name`) is mirrored into `srcs`/`hdrs`, so typing the

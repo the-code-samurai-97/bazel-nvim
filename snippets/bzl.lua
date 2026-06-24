@@ -156,6 +156,46 @@ cc_proto_library(
 )]]
   ),
 
+  -- ── Repository rules (WORKSPACE / MODULE.bazel) ─────────────────────────────
+  snip(
+    "http_archive",
+    "WORKSPACE http_archive dependency",
+    [[
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "$1",
+    sha256 = "$2",
+    strip_prefix = "$1-$3",
+    urls = ["$4"],
+)$0]]
+  ),
+  snip(
+    "git_repository",
+    "WORKSPACE git_repository dependency",
+    [[
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "$1",
+    remote = "$2",
+    commit = "$3",
+)$0]]
+  ),
+  snip(
+    "module_http",
+    "MODULE.bazel use_repo_rule http_archive (bzlmod)",
+    [[
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "$1",
+    sha256 = "$2",
+    strip_prefix = "$1-$3",
+    urls = ["$4"],
+)$0]]
+  ),
+
   -- ── Native rules ───────────────────────────────────────────────────────────
   snip(
     "genrule",
@@ -206,6 +246,39 @@ config_setting(
     values = {
         "$2": "$3",
     },
+)$0]]
+  ),
+
+  -- ── Packaging & code generation ─────────────────────────────────────────────
+  snip(
+    "pkg_files",
+    "rules_pkg pkg_files mapping",
+    [[
+load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes", "pkg_files")
+
+pkg_files(
+    name = "$1",
+    srcs = [
+        "$2",
+    ],
+    attributes = pkg_attributes(mode = "$3"),
+    prefix = package_name(),
+    visibility = ["//visibility:public"],
+)$0]]
+  ),
+  snip(
+    "cmake_configure",
+    "cmake_configure_file (generate a file from a template)",
+    [[
+load("@cmake_configure_file//:cmake_configure_file.bzl", "cmake_configure_file")
+
+cmake_configure_file(
+    name = "$1",
+    src = "$2.in",
+    out = "$2",
+    defines = [
+        "$3=$4",
+    ],
 )$0]]
   ),
 

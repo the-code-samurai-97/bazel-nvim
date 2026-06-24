@@ -312,9 +312,7 @@ function M.setup(config)
       return
     end
     local fname = vim.api.nvim_buf_get_name(bufnr)
-    local root = vim.fs.root(bufnr, config.root_markers)
-      or (fname ~= "" and vim.fs.dirname(fname))
-      or vim.uv.cwd()
+    local root = vim.fs.root(bufnr, config.root_markers) or (fname ~= "" and vim.fs.dirname(fname)) or vim.uv.cwd()
     vim.lsp.start({
       name = "bazel-symbols",
       cmd = make_server,

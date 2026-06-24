@@ -49,6 +49,9 @@ It parses `BUILD` / `BUILD.bazel` / `*.bzl` files with the (Starlark-compatible)
 - Plays nicely with the [`starpls`](https://github.com/withered-magic/starpls)
   language server: its weaker document symbols are suppressed to avoid duplicates.
 
+Run `:checkhealth bazel-nvim` to verify the requirements above, and `:help
+bazel-nvim` for the full documentation.
+
 ## Installation
 
 ### lazy.nvim
@@ -219,6 +222,13 @@ Bundled [LuaSnip](https://github.com/L3MON4D3/LuaSnip) snippets for `BUILD` /
 
 The first tabstop (target `name`) is mirrored into `srcs`/`hdrs`, so typing the
 name once fills in the source file names.
+
+## Health
+
+Run `:checkhealth bazel-nvim` to verify your setup. It checks the Neovim version,
+the `bazel`/`bazelisk` executable (or your configured `bazel`), the `python`
+Tree-sitter parser, and which optional integrations (snacks.nvim, LuaSnip,
+blink.cmp, conform + `buildifier`) are available.
 
 ## Lua API
 

@@ -3,6 +3,9 @@
 tags
 doc/tags
 
+# CI: test dependencies cloned at runtime
+.deps/
+
 # OS
 .DS_Store
 Thumbs.db

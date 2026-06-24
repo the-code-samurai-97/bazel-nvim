@@ -131,7 +131,7 @@ function source:get_completions(context, on_items)
     return on_items({}, false)
   end
   local label = before:sub(qpos + 1) -- text inside the string, up to the cursor
-  if label:find('["\']') then
+  if label:find("[\"']") then
     return on_items({}, false) -- string already closed before the cursor
   end
 

@@ -397,7 +397,7 @@ function M.create_commands()
   command("BazelTargets", function() M.pick_targets() end,     { desc = "Bazel: pick any target in workspace" })
   command("BazelRdeps",   function() M.pick_rdeps() end,       { desc = "Bazel: reverse deps of target under cursor" })
   command("BazelTarget",  function() M.goto_owning_target() end,{ desc = "Bazel: jump to target owning current file" })
-  command("BazelSources", function() M.open_sources() end,     { desc = "Bazel: open srcs/hdrs of target under cursor" })
+  command("BazelSources", function() M.open_sources() end,     { desc = "Bazel: open srcs/hdrs of target" })
   -- stylua: ignore end
 end
 

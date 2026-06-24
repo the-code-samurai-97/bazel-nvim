@@ -1,0 +1,241 @@
+*bazel-nvim.txt*          Bazel/Starlark navigation and actions for Neovim
+
+Author:  the-code-samurai-97
+License: MIT
+
+==============================================================================
+CONTENTS                                                 *bazel-nvim-contents*
+
+  1. Introduction ......................... |bazel-nvim-introduction|
+  2. Requirements ......................... |bazel-nvim-requirements|
+  3. Setup ................................ |bazel-nvim-setup|
+  4. Configuration ........................ |bazel-nvim-configuration|
+  5. Commands ............................. |bazel-nvim-commands|
+  6. Keymaps .............................. |bazel-nvim-keymaps|
+  7. Completion ........................... |bazel-nvim-completion|
+  8. Formatting ........................... |bazel-nvim-formatting|
+  9. Snippets ............................. |bazel-nvim-snippets|
+ 10. Health ............................... |bazel-nvim-health|
+ 11. Lua API .............................. |bazel-nvim-api|
+
+==============================================================================
+1. INTRODUCTION                                      *bazel-nvim-introduction*
+                                                                 *bazel-nvim*
+
+bazel-nvim is a lightweight Bazel/Starlark navigation and actions plugin. It
+parses BUILD / BUILD.bazel / *.bzl files with the (Starlark-compatible) Python
+Tree-sitter parser — no extra language server required — and adds:
+
+  - Document symbols: rule targets listed by name and rule type in the LSP
+    symbol picker, outline and breadcrumbs (in-process LSP server).
+  - Build / test / run the target under the cursor (quickfix / terminal).
+  - Build the whole package (//pkg:all, or //... at the root).
+  - Label completion in BUILD / *.bzl via blink.cmp.
+  - Workspace target picker, reverse-deps picker, srcs/hdrs picker.
+  - Yank the //pkg:target label of the rule under the cursor.
+  - Source <-> BUILD navigation.
+  - buildifier formatting via conform.nvim.
+  - Filetype detection and LuaSnip snippets for common rules.
+
+==============================================================================
+2. REQUIREMENTS                                      *bazel-nvim-requirements*
+
+  - Neovim 0.10+ (uses |vim.system()|, |vim.fs.root()|, in-process LSP).
+  - The `python` Tree-sitter parser: `:TSInstall python` (symbols/parsing).
+  - `bazel` or `bazelisk` on $PATH (build/test/run/query/navigation).
+  - folke/snacks.nvim — target/rdeps/sources pickers (optional).
+  - L3MON4D3/LuaSnip — bundled snippets (optional).
+  - saghen/blink.cmp — label completion source (optional).
+  - stevearc/conform.nvim + `buildifier` — formatting (optional).
+
+Run |bazel-nvim-health| (`:checkhealth bazel-nvim`) to verify your setup.
+
+==============================================================================
+3. SETUP                                                    *bazel-nvim-setup*
+
+With lazy.nvim: >lua
+    {
+      "the-code-samurai-97/bazel-nvim",
+      dependencies = { "folke/snacks.nvim", "L3MON4D3/LuaSnip" },
+      ft = { "bzl", "bazel", "starlark", "c", "cpp", "cuda", "python" },
+      opts = {},
+    }
+<
+`opts = {}` is enough — lazy.nvim auto-calls `require("bazel-nvim").setup(opts)`.
+
+Label completion and formatting register into blink.cmp and conform.nvim,
+which read their sources/formatters from their own configs, so add: >lua
+    {
+      "saghen/blink.cmp",
+      optional = true,
+      opts = {
+        sources = {
+          providers = { bazel = { name = "Bazel", module = "bazel-nvim.blink" } },
+          per_filetype = { bzl = { inherit_defaults = true, "bazel" } },
+        },
+      },
+    },
+    {
+      "stevearc/conform.nvim",
+      optional = true,
+      opts = {
+        formatters_by_ft = {
+          bzl = { "buildifier" },
+          bazel = { "buildifier" },
+          starlark = { "buildifier" },
+        },
+      },
+    },
+<
+==============================================================================
+4. CONFIGURATION                                    *bazel-nvim-configuration*
+
+These are the defaults; pass overrides via `opts`. >lua
+    {
+      -- Document symbols (in-process LSP).
+      symbols = true,
+      -- Suppress starpls' weaker document symbols to avoid duplicates.
+      suppress_starpls_symbols = true,
+      -- Create the :Bazel* user commands.
+      commands = true,
+      -- Load the bundled LuaSnip snippets (needs L3MON4D3/LuaSnip).
+      snippets = true,
+      -- bazel executable. nil = auto-detect ("bazel", then "bazelisk").
+      bazel = nil,
+
+      filetypes = { "bzl", "bazel", "starlark" },
+      root_markers = {
+        "MODULE.bazel", "WORKSPACE.bazel", "WORKSPACE", "WORKSPACE.bzlmod",
+      },
+      build_names = { "BUILD.bazel", "BUILD" },
+
+      -- Buffer-local keymaps in BUILD / *.bzl files (<localleader> = `\`).
+      -- Set any entry or the whole table to `false` to disable.
+      keys = {
+        build         = "<localleader>b",
+        build_package = "<localleader>B",
+        test          = "<localleader>t",
+        run           = "<localleader>r",
+        yank          = "<localleader>y",
+        rdeps         = "<localleader>R",
+        sources       = "<localleader>s",
+        targets       = "<localleader>f",
+      },
+
+      -- Keymaps in source files (C/C++/CUDA/Python).
+      source_filetypes = { "c", "cpp", "cuda", "python" },
+      source_keys = {
+        owning_target = "<localleader>b",
+        targets       = "<localleader>f",
+      },
+    }
+<
+==============================================================================
+5. COMMANDS                                              *bazel-nvim-commands*
+
+                                                                *:BazelBuild*
+:BazelBuild             Build the target under the cursor.
+                                                         *:BazelBuildPackage*
+:BazelBuildPackage      Build the whole package (//pkg:all).
+                                                                 *:BazelTest*
+:BazelTest              Test the target under the cursor.
+                                                                  *:BazelRun*
+:BazelRun               Run the target under the cursor (terminal).
+                                                                *:BazelLabel*
+:BazelLabel             Yank the //pkg:target label under the cursor.
+                                                              *:BazelTargets*
+:BazelTargets           Pick any target in the workspace and jump to it.
+                                                                *:BazelRdeps*
+:BazelRdeps             Reverse-deps picker for the target under the cursor.
+                                                               *:BazelTarget*
+:BazelTarget            Jump to the target that owns the current source file.
+                                                              *:BazelSources*
+:BazelSources           Open the srcs/hdrs of the target under the cursor.
+
+==============================================================================
+6. KEYMAPS                                                *bazel-nvim-keymaps*
+
+In BUILD / *.bzl files (<localleader> = `\` by default):
+
+  \b   Build target under cursor
+  \B   Build whole package (//pkg:all)
+  \t   Test target under cursor
+  \r   Run target under cursor
+  \y   Yank //pkg:target label
+  \R   Reverse-deps picker
+  \s   Open the target's srcs/hdrs
+  \f   Workspace target picker
+
+In .cc/.cu/.h/.py files:
+
+  \b   Jump to the target owning the file
+  \f   Workspace target picker
+
+==============================================================================
+7. COMPLETION                                          *bazel-nvim-completion*
+
+A blink.cmp source completes Bazel labels inside BUILD/*.bzl strings (register
+it with the fragment in |bazel-nvim-setup|):
+
+  "//pkg/pa...   sub-package directories under the workspace
+  "//pkg:ta...   rule targets in //pkg (via bazel query)
+  ":ta...        rule targets in the current package
+  "src/fi...     files/dirs relative to the current package
+
+==============================================================================
+8. FORMATTING                                          *bazel-nvim-formatting*
+
+With the conform fragment, `buildifier` is registered for bzl/bazel/starlark
+and runs through your existing conform pipeline (e.g. format-on-save). Install
+`buildifier` on your $PATH.
+
+==============================================================================
+9. SNIPPETS                                              *bazel-nvim-snippets*
+
+Bundled LuaSnip snippets for BUILD / *.bzl files (loaded automatically when
+LuaSnip is installed; disable with `snippets = false`). Triggers:
+
+  cc_library cc_binary cc_test          C/C++ rules (with load)
+  cuda_library cuda_binary              CUDA rules (with load)
+  py_library py_binary py_test          Python rules (with load)
+  proto_library cc_proto_library        Proto rules
+  http_archive git_repository module_http
+                                        Repository rules (WORKSPACE/MODULE)
+  genrule filegroup alias test_suite config_setting
+                                        Native rules
+  pkg_files cmake_configure             Packaging & code generation
+  load exports_files package            Utilities
+
+The first tabstop (target `name`) is mirrored into srcs/hdrs, so typing the
+name once fills in the source file names.
+
+==============================================================================
+10. HEALTH                                                 *bazel-nvim-health*
+
+Run `:checkhealth bazel-nvim` to verify the installation. It checks:
+
+  - Neovim version (0.10+).
+  - A `bazel` / `bazelisk` executable (or the configured `opts.bazel`).
+  - The `python` Tree-sitter parser (used for document symbols).
+  - Optional integrations: snacks.nvim, LuaSnip, blink.cmp, and
+    conform.nvim + `buildifier`.
+
+==============================================================================
+11. LUA API                                                   *bazel-nvim-api*
+
+Everything is available on `require("bazel-nvim")` for custom keymaps: >lua
+    local bazel = require("bazel-nvim")
+    bazel.action("build" | "test" | "run")
+    bazel.build_package()
+    bazel.yank_label()
+    bazel.pick_targets()
+    bazel.pick_rdeps()
+    bazel.open_sources()
+    bazel.goto_owning_target()
+    bazel.goto_label("//pkg:target")
+    bazel.cursor_target()          -- { label, name, rule, root } | nil, err
+    bazel.query("//...", root, cb) -- async bazel query
+    bazel.document_symbols(bufnr)  -- LSP DocumentSymbol[]
+<
+==============================================================================
+vim:tw=78:ts=8:noet:ft=help:norl:

@@ -14,6 +14,11 @@ local defaults = {
   -- Create the `:Bazel*` user commands.
   commands = true,
 
+  -- Load the bundled LuaSnip snippets for Bazel rules (cc_binary, cc_library,
+  -- py_binary, cuda_library, genrule, ...). Requires L3MON4D3/LuaSnip; no-op
+  -- without it. Set to false if you maintain your own Bazel snippets.
+  snippets = true,
+
   -- bazel executable. nil = auto-detect ("bazel", then "bazelisk").
   bazel = nil, ---@type string?
 

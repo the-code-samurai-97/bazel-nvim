@@ -20,6 +20,8 @@ It parses `BUILD` / `BUILD.bazel` / `*.bzl` files with the (Starlark-compatible)
   owns it; from a target open its `srcs`/`hdrs`.
 - **Reverse-deps picker** — `bazel query "rdeps(//..., //pkg:target)"` to see who
   depends on the target under the cursor.
+- **Snippets** — LuaSnip snippets for the common rules (`cc_binary`, `cc_library`,
+  `py_binary`, `cuda_library`, `genrule`, …) with name → source mirroring.
 
 ## Requirements
 
@@ -28,6 +30,8 @@ It parses `BUILD` / `BUILD.bazel` / `*.bzl` files with the (Starlark-compatible)
 - **`bazel`** (or `bazelisk`) on `PATH` — for build/test/run/query/navigation.
 - **[folke/snacks.nvim](https://github.com/folke/snacks.nvim)** — for the target /
   rdeps / sources pickers (optional; the rest works without it).
+- **[L3MON4D3/LuaSnip](https://github.com/L3MON4D3/LuaSnip)** — for the bundled
+  snippets (optional; set `snippets = false` to skip).
 - Plays nicely with the [`starpls`](https://github.com/withered-magic/starpls)
   language server: its weaker document symbols are suppressed to avoid duplicates.
 
@@ -38,7 +42,7 @@ It parses `BUILD` / `BUILD.bazel` / `*.bzl` files with the (Starlark-compatible)
 ```lua
 {
   "sibi-venti/bazel-nvim",
-  dependencies = { "folke/snacks.nvim" },
+  dependencies = { "folke/snacks.nvim", "L3MON4D3/LuaSnip" },
   ft = { "bzl", "bazel", "starlark", "c", "cpp", "cuda", "python" },
   opts = {},
 }
@@ -69,6 +73,8 @@ These are the defaults; pass overrides via `opts`.
   suppress_starpls_symbols = true,
   -- Create the :Bazel* user commands.
   commands = true,
+  -- Load the bundled LuaSnip snippets (needs L3MON4D3/LuaSnip).
+  snippets = true,
   -- bazel executable. nil = auto-detect ("bazel", then "bazelisk").
   bazel = nil,
 
@@ -130,6 +136,24 @@ In `.cc/.cu/.h/.py` files:
 | ---- | --------------------------------- |
 | `\b` | Jump to the target owning the file|
 | `\f` | Workspace target picker           |
+
+## Snippets
+
+Bundled [LuaSnip](https://github.com/L3MON4D3/LuaSnip) snippets for `BUILD` /
+`*.bzl` files (loaded automatically when LuaSnip is installed; disable with
+`snippets = false`). Type a trigger and expand:
+
+| Triggers                                                          | Notes                          |
+| ---------------------------------------------------------------- | ------------------------------ |
+| `cc_library` `cc_binary` `cc_test`                               | C/C++ rules (with `load`)      |
+| `cuda_library` `cuda_binary`                                     | CUDA rules (with `load`)       |
+| `py_library` `py_binary` `py_test`                               | Python rules (with `load`)     |
+| `proto_library` `cc_proto_library`                               | Proto rules                    |
+| `genrule` `filegroup` `alias` `test_suite` `config_setting`      | Native rules                   |
+| `load` `exports_files` `package`                                 | Utilities                      |
+
+The first tabstop (target `name`) is mirrored into `srcs`/`hdrs`, so typing the
+name once fills in the source file names.
 
 ## Lua API
 

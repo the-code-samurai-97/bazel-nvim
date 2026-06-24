@@ -94,6 +94,10 @@ function M.setup(opts)
     require("bazel-nvim.tools").create_commands()
   end
 
+  if config.snippets then
+    require("bazel-nvim.snippets").setup(config)
+  end
+
   local group = vim.api.nvim_create_augroup("bazel-nvim-keys", { clear = true })
   if config.keys then
     vim.api.nvim_create_autocmd("FileType", {

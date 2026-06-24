@@ -41,7 +41,7 @@ It parses `BUILD` / `BUILD.bazel` / `*.bzl` files with the (Starlark-compatible)
 
 ```lua
 {
-  "sibi-venti/bazel-nvim",
+  "the-code-samurai-97/bazel-nvim",
   dependencies = { "folke/snacks.nvim", "L3MON4D3/LuaSnip" },
   ft = { "bzl", "bazel", "starlark", "c", "cpp", "cuda", "python" },
   opts = {},
